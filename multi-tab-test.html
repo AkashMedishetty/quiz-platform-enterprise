@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz Load Test - Multiple Tabs</title>
+</head>
+<body>
+    <h1>Quiz Load Test</h1>
+    <p>This will open multiple tabs to simulate concurrent participants</p>
+    
+    <input type="text" id="sessionCode" placeholder="Enter Session Code" value="TASCON-0025">
+    <input type="number" id="tabCount" placeholder="Number of tabs" value="10" max="50">
+    <button onclick="openMultipleTabs()">Start Load Test</button>
+    <button onclick="closeAllTabs()">Close All Tabs</button>
+    
+    <div id="status"></div>
+
+    <script>
+        let openTabs = [];
+        
+        function openMultipleTabs() {
+            const sessionCode = document.getElementById('sessionCode').value;
+            const tabCount = parseInt(document.getElementById('tabCount').value);
+            const status = document.getElementById('status');
+            
+            if (!sessionCode) {
+                alert('Please enter a session code');
+                return;
+            }
+            
+            if (tabCount > 50) {
+                alert('Maximum 50 tabs allowed for safety');
+                return;
+            }
+            
+            status.innerHTML = `Opening ${tabCount} tabs...`;
+            
+            // Close existing tabs first
+            closeAllTabs();
+            
+            // Open new tabs with participant login
+            for (let i = 1; i <= tabCount; i++) {
+                setTimeout(() => {
+                    const url = `https://onsite-atlas-productionsaas.vercel.app/?participant=${sessionCode}`;
+                    const tab = window.open(url, `participant${i}`);
+                    openTabs.push(tab);
+                    
+                    status.innerHTML = `Opened ${i}/${tabCount} tabs`;
+                    
+                    if (i === tabCount) {
+                        status.innerHTML += `<br><strong>✅ All tabs opened!</strong><br>
+                        Monitor browser performance and check for crashes.<br>
+                        Watch Network tab in Dev Tools for errors.`;
+                    }
+                }, i * 200); // Stagger opening by 200ms
+            }
+        }
+        
+        function closeAllTabs() {
+            openTabs.forEach(tab => {
+                if (tab && !tab.closed) {
+                    tab.close();
+                }
+            });
+            openTabs = [];
+            document.getElementById('status').innerHTML = 'All tabs closed';
+        }
+        
+        // Warn before closing
+        window.addEventListener('beforeunload', (e) => {
+            if (openTabs.length > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html> 
